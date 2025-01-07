@@ -1,4 +1,4 @@
-const Favourite = require("../models/Favoutire");
+const Favourite = require("../models/Favourite");
 const Home = require("./../models/Home");
 
 exports.getIndex = (req, res, next) => {
