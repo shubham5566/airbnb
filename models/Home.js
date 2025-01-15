@@ -1,51 +1,24 @@
-const fs = require('fs');
-const path = require('path');
-const rootDir = require('./../util/path-util');
+const mongoose = require('mongoose');
+const Favourite = require('./Favourite');
 
-const homeFilePath = path.join(rootDir, 'data', 'homes.json');
-const {getDb}= require('../util/database-util');
-const { ObjectId } = require("mongodb");
-
-
-module.exports = class Home {
-  constructor(houseName, price, location, rating, photoUrl,description, _id) {
-    this.houseName = houseName;
-    this.price = price;
-    this.location = location;
-    this.rating = rating;
-    this.photoUrl = photoUrl;
-    this.description = description;
-    if (_id) {
-      this._id = new ObjectId(String(_id));
-    }
-  }
-
-  save() {
-    const db = getDb();
-    if (this._id) { // update
-      return db.collection("homes").updateOne({_id: this._id}, {$set: this});
-    } else { // insert
-      return db.collection("homes").insertOne(this);
-    }
-  
-  }
+const homeSchema = new mongoose.Schema({
+  houseName : {type: String, required: true},
+  price: {type: Number, required: true},
+  location: {type: String, required: true},
+  rating: {type: Number, required: true},
+  photoUrl: String,
+  description: String
+});
+homeSchema.pre('findOneAndDelete', (next) => {
+  const homeId = this.getQuery()["_id"];
+  console.log(homeId);
+  Favourite.deleteOne({homeId}).then(() => {
+    console.log("deleted successfully");
+    next();
+  }).catch(err => {
+    console.log("Error while deleting Favourite: ", err);
+  });
+});
 
 
-  static fetchAll() {
-    const db = getDb();
-    return db.collection('homes').find().toArray();
-   
-  }
-  static findById(homeId) {
-    const db = getDb();
-    return db.collection('homes').find({_id: new ObjectId(String(homeId))}).next();
-   
-  }
-
-  static deleteById(homeId) {
-    const db = getDb();
-    return db.collection('homes').deleteOne({_id: new ObjectId(String(homeId))});
-    
-  }
-   
-}
+module.exports = mongoose.model("Home", homeSchema);
